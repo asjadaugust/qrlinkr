@@ -25,7 +25,8 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --workspaces
+        # Ignore the 'prepare' script which runs 'husky' and is not needed in CI
+        run: npm install --workspaces --ignore-scripts
 
       - name: Build applications
         run: npm run build

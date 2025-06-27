@@ -1,6 +1,13 @@
 'use client';
 
-import { AppBar, Toolbar, Typography, Button, IconButton, Box } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Box,
+} from '@mui/material';
 import Link from 'next/link';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 
@@ -9,7 +16,11 @@ export default function Navbar() {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          <Link href="/" passHref style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link
+            href="/"
+            passHref
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
             QRLinkr
           </Link>
         </Typography>
