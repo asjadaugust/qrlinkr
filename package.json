@@ -1,0 +1,28 @@
+{
+  "name": "qrlinkr-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "concurrently \"npm:dev --workspace=frontend\" \"npm:dev --workspace=backend\"",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@babel/runtime": "^7.27.6",
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.4",
+    "lint-staged": "^15.2.7"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "npm run lint --workspace=frontend"
+    ],
+    "backend/**/*.ts": [
+      "npm run build --workspace=backend"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "Prisma": {
+      "command": "npx",
+      "args": ["prisma", "mcp", "--early-access"]
+    }
+  }
+}

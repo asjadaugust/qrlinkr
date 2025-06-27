@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  qrLinks   QrLink[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QrLink {
+  id              String   @id @default(cuid())
+  originalUrl     String
+  fallbackUrl     String?
+  slug            String   @unique
+  owner           User     @relation(fields: [ownerId], references: [id])
+  ownerId         String
+  analyticsEvents AnalyticsEvent[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  qrLink     QrLink   @relation(fields: [qrLinkId], references: [id])
+  qrLinkId   String
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+}
