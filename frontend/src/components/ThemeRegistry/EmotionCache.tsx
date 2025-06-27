@@ -9,11 +9,13 @@ import theme from '@/theme';
 
 // This implementation is from emotion-js
 // https://github.com/emotion-js/emotion/issues/2928#issuecomment-1319747902
-export default function ThemeRegistry(props: any) {
-  const { options, children } = props;
-
+export default function ThemeRegistry({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [{ cache, flush }] = React.useState(() => {
-    const cache = createCache(options);
+    const cache = createCache({ key: 'mui' });
     cache.compat = true;
     const prevInsert = cache.insert;
     let inserted: string[] = [];
