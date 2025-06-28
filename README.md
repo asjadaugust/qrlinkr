@@ -84,7 +84,15 @@ npm run dev
 
 ---
 
+### Next steps
+
+- Finalizing the CI/CD pipeline for automated deployments.
+- Adding user authentication.
+- Implementing analytics for QR code scans.
+- Polishing the UI/UX further.
+
 ## 📦 Tech Stack
+
 - **Frontend**: Next.js, React, TailwindCSS, Material-UI
 - **Backend**: Fastify, Node.js, TypeScript
 - **Database**: PostgreSQL (Docker), Prisma ORM
