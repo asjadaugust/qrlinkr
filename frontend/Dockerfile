@@ -49,11 +49,16 @@ COPY shared/types/package.json ./shared/types/
 # so we install all dependencies for the frontend workspace.
 RUN npm install --workspaces --frozen-lockfile --ignore-scripts
 
-# Selectively copy only the necessary production artifacts from the builder stage
-COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next ./frontend/.next
-COPY --from=builder /app/frontend/public ./frontend/public
-COPY --from=builder /app/frontend/next.config.mjs ./frontend/
-COPY --from=builder /app/frontend/package.json ./frontend/
+# Copy only necessary production assets from the builder stage
+COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next/standalone ./
+COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/public ./public
+COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next/static ./.next/static
+
+# Change ownership of the entire app directory
+RUN chown -R frontend-user:frontend-group /app
+
+# Set the working directory to the frontend app
+WORKDIR /app/frontend
 
 # Switch to the non-root user
 USER frontend-user
@@ -61,8 +66,5 @@ USER frontend-user
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Change to the frontend directory to run the app
-WORKDIR /app/frontend
-
-# The command to start the application in production mode
-CMD ["npm", "start"]
+# The default command for the standalone output is to run the server.js file
+CMD ["node", "server.js"]

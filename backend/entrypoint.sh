@@ -8,8 +8,10 @@ set -e
 
 # Run Prisma migrations
 echo "Running database migrations..."
-npx prisma migrate deploy
+# Explicitly point to the schema location
+npx prisma migrate deploy --schema=./backend/prisma/schema.prisma
 echo "Migrations applied successfully."
 
 # Start the main application (the command that was originally in the Dockerfile's CMD)
-exec "$@"
+echo "Starting the server..."
+exec node backend/dist/index.js

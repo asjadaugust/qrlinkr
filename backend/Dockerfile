@@ -31,8 +31,8 @@ RUN npm run build --workspace=backend
 # 2. Production Stage: Create the final, lean image
 FROM node:20.15.1-slim
 
-# Update base image packages to patch known OS-level vulnerabilities
-RUN apt-get update && apt-get upgrade -y --no-install-recommends
+# Update base image packages and install OpenSSL for Prisma runtime
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y openssl
 
 WORKDIR /app
 
@@ -50,10 +50,14 @@ RUN npm install --workspaces --frozen-lockfile --production --ignore-scripts
 # Selectively copy only the necessary production artifacts from the builder stage
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/prisma ./backend/prisma
+COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
 
-# Copy the entrypoint script and set permissions
-COPY --chown=backend-user:backend-group backend/entrypoint.sh /app/entrypoint.sh
+# Copy the entrypoint script
+COPY backend/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
+
+# Change ownership of the app directory to the non-root user
+RUN chown -R backend-user:backend-group /app
 
 # Switch to the non-root user
 USER backend-user
