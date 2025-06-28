@@ -43,12 +43,22 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/qrlinkr-frontend:latest
 
   deploy:
-    name: Trigger Synology Redeploy
+    name: Deploy on Synology via SSH
     needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚀 Call Synology Webhook
-        uses: distributhor/workflow-webhook@v3
-        env:
-          webhook_url: ${{ secrets.SYNOLOGY_WEBHOOK_URL }}
+      - name: 🔐 Install SSH Client
+        run: sudo apt-get install openssh-client -y
+
+      - name: 🚀 SSH into Synology and Pull + Restart Containers
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            cd /volume1/docker/qrlinkr
+            docker-compose pull
+            docker-compose up -d
