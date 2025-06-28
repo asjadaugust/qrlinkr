@@ -3,8 +3,8 @@
 # 1. Builder Stage: Install dependencies and build the application
 FROM node:20.15.1-slim AS builder
 
-# Update base image packages to patch known OS-level vulnerabilities
-RUN apt-get update && apt-get upgrade -y --no-install-recommends
+# Update base image packages and install OpenSSL to avoid Prisma warnings
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y openssl
 
 WORKDIR /app
 
@@ -15,11 +15,12 @@ COPY backend/package.json ./backend/
 COPY shared/types/package.json ./shared/types/
 
 # Install all monorepo dependencies
-RUN npm install --workspaces --frozen-lockfile
+RUN npm install --workspaces --frozen-lockfile --ignore-scripts
 
-# Copy the backend's source code and Prisma schema
+# Copy the backend's source code, tsconfig, and Prisma schema
 COPY backend/src ./backend/src
 COPY backend/prisma ./backend/prisma
+COPY backend/tsconfig.json ./backend/tsconfig.json
 
 # Generate Prisma Client, specifying the correct schema path
 RUN npx prisma generate --schema=./backend/prisma/schema.prisma
@@ -36,17 +37,23 @@ RUN apt-get update && apt-get upgrade -y --no-install-recommends
 WORKDIR /app
 
 # Create a non-root user for better security
-RUN addgroup --system --gid 1002 backend-group
-RUN adduser --system --uid 1002 backend-user
+RUN addgroup --system --gid 1002 backend-group && adduser --system --uid 1002 backend-user
+
+# Copy production dependencies manifests
+COPY package*.json ./
+COPY backend/package.json ./backend/
+COPY shared/types/package.json ./shared/types/
+
+# Install only production dependencies for all workspaces
+RUN npm install --workspaces --frozen-lockfile --production --ignore-scripts
 
 # Selectively copy only the necessary production artifacts from the builder stage
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/backend/package.json ./package.json
-COPY --from=builder /app/backend/prisma ./prisma
+COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/backend/prisma ./backend/prisma
 
-# Copy the entrypoint script, ensuring the path is relative to the context
+# Copy the entrypoint script and set permissions
 COPY --chown=backend-user:backend-group backend/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Switch to the non-root user
 USER backend-user
@@ -59,4 +66,4 @@ ENTRYPOINT ["/app/entrypoint.sh"]
 
 # The command to start the application
 # This will be passed to the entrypoint script
-CMD ["node", "dist/index.js"]
+CMD ["node", "backend/dist/index.js"]

@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    name: Build Applications
+  build_and_test:
+    name: Build & Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,4 +29,7 @@ jobs:
         run: npm install --workspaces --ignore-scripts
 
       - name: Build applications
-        run: npm run build
+        run: npm run build --workspaces
+
+      - name: Test applications
+        run: npm run test --workspaces

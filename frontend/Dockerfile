@@ -1,33 +1,34 @@
 # Dockerfile for Next.js Frontend
 
-# 1. Builder Stage: Build the Next.js application
-# Use a specific, recent version of the Node.js LTS image for better security and reproducibility
+# 1. Builder Stage: Install dependencies and build the application
 FROM node:20.15.1-slim AS builder
 
 # Update base image packages to patch known OS-level vulnerabilities
 RUN apt-get update && apt-get upgrade -y --no-install-recommends
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and lock file
+# Copy all necessary package and lock files from the monorepo root
 COPY package*.json ./
+COPY frontend/package.json ./frontend/
+COPY shared/types/package.json ./shared/types/
 
-# Install dependencies
-RUN npm install --frozen-lockfile
+# Install all monorepo dependencies
+RUN npm install --workspaces --frozen-lockfile --ignore-scripts
 
-# Copy the rest of the application source code
-COPY . .
+# Copy the frontend's source code and the shared types
+COPY frontend/ ./frontend/
+COPY shared/ ./shared/
 
 # Set build-time environment variables
 # The backend URL will be provided at runtime
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
-# Build the Next.js application
-RUN npm run build
+# Build the Next.js application, specifying the workspace
+RUN npm run build --workspace=frontend
 
-# 2. Runner Stage: Create the final, lean image
+# 2. Production Stage: Create the final, lean image
 FROM node:20.15.1-slim
 
 # Update base image packages to patch known OS-level vulnerabilities
@@ -36,20 +37,32 @@ RUN apt-get update && apt-get upgrade -y --no-install-recommends
 WORKDIR /app
 
 # Create a non-root user for better security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 frontend-group && adduser --system --uid 1001 frontend-user
 
-# Copy only the necessary files from the builder stage
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Copy production dependency manifests
+COPY package*.json ./
+COPY frontend/package.json ./frontend/
+COPY shared/types/package.json ./shared/types/
+
+# Install only production dependencies for all workspaces
+# Next.js needs some devDependencies (like typescript) to run `npm start`
+# so we install all dependencies for the frontend workspace.
+RUN npm install --workspaces --frozen-lockfile --ignore-scripts
+
+# Selectively copy only the necessary production artifacts from the builder stage
+COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next ./frontend/.next
+COPY --from=builder /app/frontend/public ./frontend/public
+COPY --from=builder /app/frontend/next.config.mjs ./frontend/
+COPY --from=builder /app/frontend/package.json ./frontend/
 
 # Switch to the non-root user
-USER nextjs
+USER frontend-user
 
 # Expose the port the app runs on
 EXPOSE 3000
+
+# Change to the frontend directory to run the app
+WORKDIR /app/frontend
 
 # The command to start the application in production mode
 CMD ["npm", "start"]
