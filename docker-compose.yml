@@ -1,16 +1,58 @@
 version: '3.8'
+
 services:
+  # PostgreSQL Database Service
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     restart: always
     environment:
-      POSTGRES_DB: qrlinkr
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB:-qrlinkr}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - qrlinkr-net
+
+  # Backend API Service (Fastify)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile # Assuming you will create a Dockerfile for the backend
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-qrlinkr}
+      - PORT=3001
+    ports:
+      - '3001:3001'
+    networks:
+      - qrlinkr-net
+
+  # Frontend Web Application (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001 # For client-side requests
+      # For server-side rendering (SSR) in Docker, the frontend needs to call the backend via its service name
+      - INTERNAL_API_URL=http://backend:3001
+    networks:
+      - qrlinkr-net
 
 volumes:
   postgres_data:
+    driver: local
+
+networks:
+  qrlinkr-net:
+    driver: bridge
