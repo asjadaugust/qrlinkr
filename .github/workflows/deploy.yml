@@ -59,6 +59,7 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           port: ${{ secrets.DEPLOY_PORT }}
           script: |
+            export PATH=$PATH:/usr/local/bin:/volume1/@appstore/Docker/usr/bin
             cd /volume1/docker/qrlinkr
-            docker compose pull
-            docker compose up -d
+            docker-compose pull
+            docker-compose up -d
