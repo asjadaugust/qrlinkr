@@ -44,6 +44,8 @@ COPY --from=builder --chown=backend-user:backend-group /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder --chown=backend-user:backend-group /app/prisma ./prisma
+# Copy the entrypoint script
+COPY --chown=backend-user:backend-group backend/entrypoint.sh /app/entrypoint.sh
 
 # Switch to the non-root user
 USER backend-user
@@ -51,6 +53,9 @@ USER backend-user
 # Expose the port the app runs on
 EXPOSE 3001
 
+# Set the entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # The command to start the application
-# It first runs any pending migrations and then starts the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+# This will be passed to the entrypoint script
+CMD ["node", "dist/index.js"]
