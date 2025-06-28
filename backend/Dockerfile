@@ -8,24 +8,24 @@ RUN apt-get update && apt-get upgrade -y --no-install-recommends
 
 WORKDIR /app
 
-# Copy package.json and lock file
+# Copy all necessary package and lock files from the monorepo root
+# This is optimized to leverage Docker layer caching.
 COPY package*.json ./
+COPY backend/package.json ./backend/
+COPY shared/types/package.json ./shared/types/
 
-# Install dependencies
-RUN npm install --frozen-lockfile
+# Install all monorepo dependencies
+RUN npm install --workspaces --frozen-lockfile
 
-# Copy Prisma schema
-COPY prisma ./prisma/
+# Copy the backend's source code and Prisma schema
+COPY backend/src ./backend/src
+COPY backend/prisma ./backend/prisma
 
-# Generate Prisma Client
-# This ensures the client is generated based on the schema before building
-RUN npx prisma generate
+# Generate Prisma Client, specifying the correct schema path
+RUN npx prisma generate --schema=./backend/prisma/schema.prisma
 
-# Copy the rest of the application source code
-COPY . .
-
-# Compile TypeScript to JavaScript
-RUN npm run build
+# Build the backend application, specifying the workspace
+RUN npm run build --workspace=backend
 
 # 2. Production Stage: Create the final, lean image
 FROM node:20.15.1-slim
@@ -39,12 +39,13 @@ WORKDIR /app
 RUN addgroup --system --gid 1002 backend-group
 RUN adduser --system --uid 1002 backend-user
 
-# Copy built application and necessary files from the builder stage
-COPY --from=builder --chown=backend-user:backend-group /app/dist ./dist
+# Selectively copy only the necessary production artifacts from the builder stage
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder --chown=backend-user:backend-group /app/prisma ./prisma
-# Copy the entrypoint script
+COPY --from=builder /app/backend/dist ./dist
+COPY --from=builder /app/backend/package.json ./package.json
+COPY --from=builder /app/backend/prisma ./prisma
+
+# Copy the entrypoint script, ensuring the path is relative to the context
 COPY --chown=backend-user:backend-group backend/entrypoint.sh /app/entrypoint.sh
 
 # Switch to the non-root user
