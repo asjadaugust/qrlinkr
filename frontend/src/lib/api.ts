@@ -1,11 +1,9 @@
 import axios from 'axios';
 
-// If NEXT_PUBLIC_BACKEND_HOST is set, we use Next.js proxy (/api)
-// If NEXT_PUBLIC_API_BASE_URL is set, we use that directly (for production)
+// In production, NEXT_PUBLIC_API_BASE_URL should be set to the backend's public URL
+// In development, NEXT_PUBLIC_BACKEND_HOST is set and we use Next.js proxy (/api)
 // Otherwise, default to /api for local development
-const baseURL = process.env.NEXT_PUBLIC_BACKEND_HOST 
-  ? '/api' 
-  : (process.env.NEXT_PUBLIC_API_BASE_URL || '/api');
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 
 console.log('API Base URL:', baseURL);
 

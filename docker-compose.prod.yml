@@ -23,7 +23,7 @@ services:
       - '3000:3000' # Expose frontend on port 3000
     environment:
       # IMPORTANT: Replace with your server's IP address or domain name
-      # Examples: 
+      # Examples:
       # - NEXT_PUBLIC_API_BASE_URL=http://192.168.1.100:3001  # For local IP
       # - NEXT_PUBLIC_API_BASE_URL=http://your-domain.com:3001  # For domain
       # - NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com  # For subdomain with SSL

@@ -40,8 +40,21 @@ export default function QrCodeGenerator() {
       const fullShortUrl = `${window.location.protocol}//${window.location.host}/r/${data.slug}`;
       setShortUrl(fullShortUrl);
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data) {
-        const response = err.response as { status: number; data: { message: string } };
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        err.response &&
+        typeof err.response === 'object' &&
+        'data' in err.response &&
+        err.response.data &&
+        typeof err.response.data === 'object' &&
+        'message' in err.response.data
+      ) {
+        const response = err.response as {
+          status: number;
+          data: { message: string };
+        };
         if (response.status === 409) {
           setError(
             response.data.message ||
