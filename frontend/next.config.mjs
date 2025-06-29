@@ -1,15 +1,18 @@
+const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:3001';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   output: 'standalone',
   async rewrites() {
     return [
       {
-        source: '/r/:slug',
-        destination: 'http://localhost:3001/r/:slug', // Proxy to Backend
+        source: '/api/:path*',
+        destination: `${backendHost}/api/:path*`,
       },
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*', // Proxy to Backend
+        source: '/r/:slug',
+        destination: `${backendHost}/r/:slug`,
       },
     ];
   },

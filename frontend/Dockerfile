@@ -23,7 +23,9 @@ COPY shared/ ./shared/
 # Set build-time environment variables
 # The backend URL will be provided at runtime
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_BACKEND_HOST
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_BACKEND_HOST=${NEXT_PUBLIC_BACKEND_HOST}
 
 # Build the Next.js application, specifying the workspace
 RUN npm run build --workspace=frontend

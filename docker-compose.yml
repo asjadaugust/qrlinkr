@@ -37,15 +37,13 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_HOST: http://backend:3001
     restart: always
     depends_on:
       - backend
     ports:
       - '3000:3000'
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001 # For client-side requests
-      # For server-side rendering (SSR) in Docker, the frontend needs to call the backend via its service name
-      - INTERNAL_API_URL=http://backend:3001
     networks:
       - qrlinkr-net
 
