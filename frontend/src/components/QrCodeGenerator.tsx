@@ -34,7 +34,7 @@ export default function QrCodeGenerator() {
       };
 
       // Use the new api client
-      const res = await api.post('/qr/new', body);
+      const res = await api.post('/api/qr/new', body);
 
       const data = res.data;
       const fullShortUrl = `${window.location.protocol}//${window.location.host}/r/${data.slug}`;

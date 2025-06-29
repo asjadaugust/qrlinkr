@@ -33,7 +33,7 @@ export default function LinkDashboard() {
 
   const fetchLinks = async () => {
     try {
-      const response = await api.get<QrLink[]>('/qr/links');
+      const response = await api.get<QrLink[]>('/api/qr/links');
       setLinks(response.data);
     } catch (error) {
       console.error('Failed to fetch links:', error);
@@ -47,7 +47,7 @@ export default function LinkDashboard() {
 
   const handleUpdate = async (id: string) => {
     try {
-      await api.put(`/qr/${id}`, { destination: editText });
+      await api.put(`/api/qr/${id}`, { destination: editText });
       setEditingId(null);
       setEditText('');
       fetchLinks(); // Refresh the list
@@ -58,7 +58,7 @@ export default function LinkDashboard() {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/qr/${id}`);
+      await api.delete(`/api/qr/${id}`);
       fetchLinks(); // Refresh the list
     } catch (error) {
       console.error('Failed to delete link:', error);

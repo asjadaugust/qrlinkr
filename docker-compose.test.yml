@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/qrlinkr-owner/qrlinkr-backend:latest # <-- IMPORTANT: Replace with your GitHub username
+    image: qrlinkr-backend:latest
     container_name: qrlinkr-backend-prod
     restart: unless-stopped
     networks:
@@ -8,13 +8,17 @@ services:
     ports:
       - '3001:3001' # Expose backend API on port 3001
     environment:
-      - DATABASE_URL=${DATABASE_URL} # This will be loaded from a .env file on the NAS
+      - DATABASE_URL=${DATABASE_URL}
       - PORT=3001
     depends_on:
       - db
 
   frontend:
-    image: ghcr.io/qrlinkr-owner/qrlinkr-frontend:latest # <-- IMPORTANT: Replace with your GitHub username
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        - NEXT_PUBLIC_BACKEND_HOST=http://backend:3001
     container_name: qrlinkr-frontend-prod
     restart: unless-stopped
     networks:
@@ -22,14 +26,8 @@ services:
     ports:
       - '3000:3000' # Expose frontend on port 3000
     environment:
-      # IMPORTANT: Replace with your server's IP address or domain name
-      # This should be the IP/domain that browsers can reach from outside the Docker network
-      # Examples:
-      # - NEXT_PUBLIC_API_BASE_URL=http://192.168.1.100:3001  # For local IP
-      # - NEXT_PUBLIC_API_BASE_URL=http://your-domain.com:3001  # For domain
-      # - NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com  # For subdomain with SSL
       - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
-      # DO NOT set NEXT_PUBLIC_BACKEND_HOST in production
+      - NEXT_PUBLIC_BACKEND_HOST=http://backend:3001  # Set backend host for proxy
     depends_on:
       - backend
 
@@ -52,4 +50,3 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local

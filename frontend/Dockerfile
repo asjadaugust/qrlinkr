@@ -21,14 +21,14 @@ COPY frontend/ ./frontend/
 COPY shared/ ./shared/
 
 # Set build-time environment variables
-# The backend URL will be provided at runtime
-ARG NEXT_PUBLIC_API_URL
+# The backend URL will be provided at runtime or build time
+ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_BACKEND_HOST
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 ENV NEXT_PUBLIC_BACKEND_HOST=${NEXT_PUBLIC_BACKEND_HOST}
 
 # Build the Next.js application, specifying the workspace
-RUN npm run build --workspace=frontend
+RUN cd frontend && npm run build
 
 # 2. Production Stage: Create the final, lean image
 FROM node:20.15.1-slim
@@ -56,6 +56,10 @@ COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next/sta
 COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/public ./public
 COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next/static ./.next/static
 
+# Copy entrypoint script
+COPY --chown=frontend-user:frontend-group frontend/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 # Change ownership of the entire app directory
 RUN chown -R frontend-user:frontend-group /app
 
@@ -68,5 +72,6 @@ USER frontend-user
 # Expose the port the app runs on
 EXPOSE 3000
 
-# The default command for the standalone output is to run the server.js file
+# Use entrypoint script to inject runtime configuration
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "server.js"]
