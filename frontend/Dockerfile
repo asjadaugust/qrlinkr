@@ -57,8 +57,8 @@ COPY --from=builder --chown=frontend-user:frontend-group /app/frontend/.next/sta
 # Change ownership of the entire app directory
 RUN chown -R frontend-user:frontend-group /app
 
-# Set the working directory to the frontend app
-WORKDIR /app/frontend
+# The working directory should be /app where server.js is located
+WORKDIR /app
 
 # Switch to the non-root user
 USER frontend-user
