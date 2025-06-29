@@ -4,15 +4,16 @@ const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST || 'http://localhost:30
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
+  // Always use rewrites when NEXT_PUBLIC_BACKEND_HOST is set
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${backendHost}/api/:path*`,
+        destination: `${backendHost}/api/:path*`, // Proxy to Backend
       },
       {
         source: '/r/:slug',
-        destination: `${backendHost}/r/:slug`,
+        destination: `${backendHost}/r/:slug`, // Proxy to Backend
       },
     ];
   },

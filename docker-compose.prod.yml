@@ -1,26 +1,33 @@
-version: '3.8'
-
 services:
   backend:
-    image: ghcr.io/your-github-username/qrlinkr-backend:latest # <-- IMPORTANT: Replace with your GitHub username
+    image: ghcr.io/qrlinkr-owner/qrlinkr-backend:latest # <-- IMPORTANT: Replace with your GitHub username
     container_name: qrlinkr-backend-prod
     restart: unless-stopped
     networks:
       - qrlinkr-net
+    ports:
+      - '3001:3001' # Expose backend API on port 3001
     environment:
       - DATABASE_URL=${DATABASE_URL} # This will be loaded from a .env file on the NAS
-      - API_BASE_URL=${API_BASE_URL}
+      - PORT=3001
     depends_on:
       - db
 
   frontend:
-    image: ghcr.io/your-github-username/qrlinkr-frontend:latest # <-- IMPORTANT: Replace with your GitHub username
+    image: ghcr.io/qrlinkr-owner/qrlinkr-frontend:latest # <-- IMPORTANT: Replace with your GitHub username
     container_name: qrlinkr-frontend-prod
     restart: unless-stopped
     networks:
       - qrlinkr-net
     ports:
       - '3000:3000' # Expose frontend on port 3000
+    environment:
+      # IMPORTANT: Replace with your server's IP address or domain name
+      # Examples: 
+      # - NEXT_PUBLIC_API_BASE_URL=http://192.168.1.100:3001  # For local IP
+      # - NEXT_PUBLIC_API_BASE_URL=http://your-domain.com:3001  # For domain
+      # - NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.com  # For subdomain with SSL
+      - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL:-http://localhost:3001}
     depends_on:
       - backend
 

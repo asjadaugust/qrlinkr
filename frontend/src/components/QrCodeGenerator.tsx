@@ -10,6 +10,7 @@ import {
   Modal,
 } from '@mui/material';
 import { QRCodeCanvas } from 'qrcode.react';
+import api from '../lib/api'; // Import the centralized API client
 
 export default function QrCodeGenerator() {
   const [destination, setDestination] = useState('');
@@ -32,30 +33,24 @@ export default function QrCodeGenerator() {
         ...(customSlug && { custom_slug: customSlug }),
       };
 
-      const res = await fetch('/api/qr/new', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
+      // Use the new api client
+      const res = await api.post('/qr/new', body);
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        if (res.status === 409) {
-          throw new Error(
-            errorData.message ||
-              'That custom slug is already taken. Please try another.'
-          );
-        }
-        throw new Error(errorData.message || 'Failed to generate QR code');
-      }
-
-      const data = await res.json();
+      const data = res.data;
       const fullShortUrl = `${window.location.protocol}//${window.location.host}/r/${data.slug}`;
       setShortUrl(fullShortUrl);
-    } catch (err) {
-      if (err instanceof Error) {
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data) {
+        const response = err.response as { status: number; data: { message: string } };
+        if (response.status === 409) {
+          setError(
+            response.data.message ||
+              'That custom slug is already taken. Please try another.'
+          );
+        } else {
+          setError(response.data.message || 'Failed to generate QR code');
+        }
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
         setError('An unknown error occurred');

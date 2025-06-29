@@ -22,6 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DownloadIcon from '@mui/icons-material/Download';
+import api from '../lib/api'; // Import the centralized API client
 
 export default function LinkDashboard() {
   const [links, setLinks] = useState<QrLink[]>([]);
@@ -31,9 +32,13 @@ export default function LinkDashboard() {
   const [selectedLink, setSelectedLink] = useState<QrLink | null>(null);
 
   const fetchLinks = async () => {
-    const response = await fetch('/api/qr/links');
-    const data = await response.json();
-    setLinks(data);
+    try {
+      const response = await api.get<QrLink[]>('/qr/links');
+      setLinks(response.data);
+    } catch (error) {
+      console.error('Failed to fetch links:', error);
+      // Optionally, set an error state to show a message to the user
+    }
   };
 
   useEffect(() => {
@@ -41,19 +46,23 @@ export default function LinkDashboard() {
   }, []);
 
   const handleUpdate = async (id: string) => {
-    await fetch(`/api/qr/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ destination: editText }),
-    });
-    setEditingId(null);
-    setEditText('');
-    fetchLinks(); // Refresh the list
+    try {
+      await api.put(`/qr/${id}`, { destination: editText });
+      setEditingId(null);
+      setEditText('');
+      fetchLinks(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to update link:', error);
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/qr/${id}`, { method: 'DELETE' });
-    fetchLinks(); // Refresh the list
+    try {
+      await api.delete(`/qr/${id}`);
+      fetchLinks(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to delete link:', error);
+    }
   };
 
   const startEditing = (link: QrLink) => {
