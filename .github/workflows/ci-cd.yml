@@ -14,6 +14,21 @@ jobs:
       matrix:
         node-version: [20.x]
 
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: qrlinkr123
+          POSTGRES_USER: qrlinkr
+          POSTGRES_DB: qrlinkr_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,5 +46,18 @@ jobs:
       - name: Build applications
         run: npm run build --workspaces
 
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://qrlinkr:qrlinkr123@localhost:5432/qrlinkr_test
+        working-directory: ./backend
+        run: |
+          # Create test database (CI database starts with only the default database)
+          PGPASSWORD=qrlinkr123 createdb -h localhost -U qrlinkr qrlinkr_test || true
+          npx prisma migrate deploy
+          npx prisma generate
+
       - name: Test applications
+        env:
+          DATABASE_URL: postgresql://qrlinkr:qrlinkr123@localhost:5432/qrlinkr_test
+          NODE_ENV: test
         run: npm run test --workspaces

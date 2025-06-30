@@ -2,6 +2,13 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { build } from '../src/server';
 import { PrismaClient } from '@prisma/client';
 import { nanoid } from 'nanoid';
+import dotenv from 'dotenv';
+
+// Load test environment variables FIRST
+dotenv.config({ path: '.env.test' });
+
+// Force the correct DATABASE_URL for tests
+process.env.DATABASE_URL = 'postgresql://qrlinkr:qrlinkr123@localhost:5432/qrlinkr_test';
 
 describe('QR Link API Integration Tests', () => {
   const app = build();
@@ -15,7 +22,7 @@ describe('QR Link API Integration Tests', () => {
     await prisma.qrLink.deleteMany({});
     await prisma.user.deleteMany({ where: { email: 'test@example.com' } });
 
-    // Create test user
+    // Create test user matching what the API expects
     await prisma.user.create({
       data: {
         id: 'test_user_id',

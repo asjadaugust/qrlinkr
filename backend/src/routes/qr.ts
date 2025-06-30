@@ -9,7 +9,8 @@ import {
 } from '../schemas/qr.js';
 import { ZodError } from 'zod';
 
-const prisma = new PrismaClient();
+// Create Prisma client inside the function to respect environment variables
+let prisma: PrismaClient;
 
 const normalizeUrl = (url: string) => {
   if (!/^(https?:\/\/)/i.test(url)) {
@@ -19,6 +20,11 @@ const normalizeUrl = (url: string) => {
 };
 
 export default async function (fastify: FastifyInstance) {
+  // Initialize Prisma client here to respect current environment variables
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+
   // Error handler for zod validation
   fastify.setErrorHandler((error, request, reply) => {
     if (error instanceof ZodError) {
