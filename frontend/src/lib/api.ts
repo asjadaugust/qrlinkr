@@ -1,4 +1,11 @@
 import axios from 'axios';
+import { AxiosInstance } from 'axios';
+
+// Extended API client type with additional helper methods
+interface ExtendedAxiosInstance extends AxiosInstance {
+  getBaseUrl: () => string;
+  safeDelete: (url: string) => Promise<unknown>;
+}
 
 // Type for the runtime config
 declare global {
@@ -28,15 +35,25 @@ function getApiBaseUrl(): string {
 
   // Client-side: check if config was loaded from /config.js
   const config = window.__QRLINKR_CONFIG__;
-  if (config?.apiBaseUrl && config.apiBaseUrl !== '/api' && config.apiBaseUrl !== '__API_BASE_URL_PLACEHOLDER__') {
-    console.log('Client-side: Using runtime config API base URL:', config.apiBaseUrl);
+  if (
+    config?.apiBaseUrl &&
+    config.apiBaseUrl !== '/api' &&
+    config.apiBaseUrl !== '__API_BASE_URL_PLACEHOLDER__'
+  ) {
+    console.log(
+      'Client-side: Using runtime config API base URL:',
+      config.apiBaseUrl
+    );
     return config.apiBaseUrl;
   }
 
   // Check build-time environment variable
   const buildTimeUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (buildTimeUrl && buildTimeUrl !== '/api') {
-    console.log('Client-side: Using build-time NEXT_PUBLIC_API_BASE_URL:', buildTimeUrl);
+    console.log(
+      'Client-side: Using build-time NEXT_PUBLIC_API_BASE_URL:',
+      buildTimeUrl
+    );
     return buildTimeUrl;
   }
 
@@ -49,6 +66,11 @@ function getApiBaseUrl(): string {
   // In production without runtime config, this should not happen
   console.error('Client-side: No API base URL configured in production!');
   return '/api'; // Last resort fallback
+}
+
+// Export the base URL function for direct use in components
+export function getBaseUrl(): string {
+  return getApiBaseUrl();
 }
 
 // Wait for runtime config to be available
@@ -78,10 +100,10 @@ function waitForConfig(): Promise<void> {
         setTimeout(checkConfig, 50);
       }
     };
-    
+
     // Start checking immediately
     checkConfig();
-    
+
     // Also listen for DOMContentLoaded in case we're very early
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', checkConfig);
@@ -92,26 +114,29 @@ function waitForConfig(): Promise<void> {
 }
 
 // Create axios instance with initial base URL
-const api = axios.create({
+const api: ExtendedAxiosInstance = axios.create({
   timeout: 10000, // 10 second timeout
-});
+  headers: {
+    'Content-Type': 'application/json',
+  },
+}) as ExtendedAxiosInstance;
 
 // Function to initialize or update the API base URL
 async function initializeApi(): Promise<string> {
   // Wait for config to be available on client-side
   await waitForConfig();
-  
+
   const baseURL = getApiBaseUrl();
-  
+
   console.log('=== API Client Configuration ===');
   console.log('Final API Base URL:', baseURL);
   console.log('Is using Next.js proxy:', baseURL === '/api');
   console.log('================================');
-  
+
   // Update the axios instance with the correct base URL
   api.defaults.baseURL = baseURL;
   isInitialized = true;
-  
+
   return baseURL;
 }
 
@@ -127,21 +152,28 @@ api.interceptors.request.use(
     // ALWAYS re-check for runtime config on client-side before each request
     if (typeof window !== 'undefined') {
       const runtimeConfig = window.__QRLINKR_CONFIG__;
-      if (runtimeConfig?.apiBaseUrl && 
-          runtimeConfig.apiBaseUrl !== '/api' && 
-          runtimeConfig.apiBaseUrl !== '__API_BASE_URL_PLACEHOLDER__') {
+      if (
+        runtimeConfig?.apiBaseUrl &&
+        runtimeConfig.apiBaseUrl !== '/api' &&
+        runtimeConfig.apiBaseUrl !== '__API_BASE_URL_PLACEHOLDER__'
+      ) {
         // Use runtime config if available
         config.baseURL = runtimeConfig.apiBaseUrl;
-        console.log('🔄 Interceptor: Using runtime config for request:', runtimeConfig.apiBaseUrl);
+        console.log(
+          '🔄 Interceptor: Using runtime config for request:',
+          runtimeConfig.apiBaseUrl
+        );
       } else {
-        console.log('⚠️ Interceptor: No runtime config found, attempting initialization');
+        console.log(
+          '⚠️ Interceptor: No runtime config found, attempting initialization'
+        );
         if (!isInitialized) {
           console.log('Initializing API client before request...');
           await initializeApi();
         }
       }
     }
-    
+
     console.log(`🚀 Making API request to: ${config.baseURL}${config.url}`);
     return config;
   },
@@ -154,11 +186,34 @@ api.interceptors.request.use(
 // Add response interceptor for debugging
 api.interceptors.response.use(
   (response) => {
-    console.log(`API response from: ${response.config.url} - Status: ${response.status}`);
+    console.log(
+      `API response from: ${response.config.url} - Status: ${response.status}`
+    );
     return response;
   },
   (error) => {
-    console.error(`API error from: ${error.config?.url}`, error.message);
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error(
+        `API error from: ${error.config?.url}`,
+        `Status: ${error.response.status}`,
+        `Data:`,
+        error.response.data
+      );
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error(
+        `API error: No response received from: ${error.config?.url}`,
+        error.request
+      );
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error(
+        `API error setting up request: ${error.config?.url}`,
+        error.message
+      );
+    }
     return Promise.reject(error);
   }
 );
@@ -167,5 +222,48 @@ api.interceptors.response.use(
 if (typeof window !== 'undefined') {
   initializeApi().catch(console.error);
 }
+
+// Add the getBaseUrl method to the api object
+api.getBaseUrl = getBaseUrl;
+
+// Add explicit methods for handling errors gracefully
+api.safeDelete = async (url: string) => {
+  try {
+    console.log(`Attempting to delete: ${url}`);
+    const response = await api.delete(url);
+    console.log(`Delete successful: ${url}`);
+    return response;
+  } catch (error: unknown) {
+    console.error(`Safe delete failed for ${url}:`, error);
+
+    // Provide more detailed error information
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as {
+        response?: { status?: number; data?: { message?: string } };
+      };
+      console.error(
+        'Error response:',
+        axiosError.response?.status,
+        axiosError.response?.data
+      );
+      throw new Error(
+        `Delete failed: ${axiosError.response?.status} - ${
+          axiosError.response?.data?.message || 'Unknown error'
+        }`
+      );
+    } else if (error && typeof error === 'object' && 'request' in error) {
+      console.error(
+        'No response received:',
+        (error as { request?: unknown }).request
+      );
+      throw new Error('Network error: No response from server');
+    } else {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Request setup error:', errorMessage);
+      throw new Error(`Request error: ${errorMessage}`);
+    }
+  }
+};
 
 export default api;

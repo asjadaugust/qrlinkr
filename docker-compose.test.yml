@@ -27,7 +27,7 @@ services:
       - '3000:3000' # Expose frontend on port 3000
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
-      - NEXT_PUBLIC_BACKEND_HOST=http://backend:3001  # Set backend host for proxy
+      - NEXT_PUBLIC_BACKEND_HOST=http://backend:3001 # Set backend host for proxy
     depends_on:
       - backend
 

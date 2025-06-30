@@ -1,7 +1,12 @@
 'use client';
 
 import { Container } from '@mui/material';
-import QrCodeGenerator from '@/components/QrCodeGenerator';
+import dynamic from 'next/dynamic';
+
+// Dynamically import QR Code Generator to avoid SSR issues
+const QrCodeGenerator = dynamic(() => import('@/components/QrCodeGenerator'), {
+  ssr: false,
+});
 
 export default function Home() {
   return (

@@ -1,11 +1,16 @@
 // Use rewrites only in development mode
 // In production with Docker, we want to use runtime config exclusively
-const shouldUseRewrites = process.env.NODE_ENV === 'development' && 
-  (!process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL === '/api');
+const shouldUseRewrites =
+  process.env.NODE_ENV === 'development' &&
+  (!process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL === '/api');
 
 // For Docker environments, default to 'backend' service name
-const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST || 
-  (process.env.NODE_ENV === 'production' ? 'http://backend:3001' : 'http://localhost:3001');
+const backendHost =
+  process.env.NEXT_PUBLIC_BACKEND_HOST ||
+  (process.env.NODE_ENV === 'production'
+    ? 'http://backend:3001'
+    : 'http://localhost:3001');
 
 console.log('=== Next.js Configuration ===');
 console.log('NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
@@ -19,11 +24,13 @@ console.log('==============================');
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
-  
+
   async rewrites() {
     // Use rewrites if we should proxy requests
     if (!shouldUseRewrites) {
-      console.log('Next.js Config - Rewrites disabled, runtime config should handle API calls');
+      console.log(
+        'Next.js Config - Rewrites disabled, runtime config should handle API calls'
+      );
       return [];
     }
 

@@ -14,28 +14,45 @@ export interface QrLink {
   originalUrl: string;
   fallbackUrl: string | null;
   slug: string;
-  shortUrl: string;
-  userId: string;
+  ownerId: string;
   createdAt: Date;
   updatedAt: Date;
+  // Analytics data
+  analyticsEvents?: AnalyticsEvent[];
+  _count?: {
+    analyticsEvents: number;
+  };
 }
 
 export interface AnalyticsEvent {
   id: string;
   qrLinkId: string;
-  ipAddress: string;
+  ipAddress: string | null;
   userAgent: string | null;
-  scannedAt: Date;
+  timestamp: Date;
+}
+
+export interface AnalyticsSummary {
+  totalScans: number;
+  events: AnalyticsEvent[];
 }
 
 // API payload types
 export interface CreateQrLinkPayload {
   destination: string;
-  slug?: string;
+  custom_slug?: string;
 }
 
 export interface UpdateQrLinkPayload {
-  originalUrl?: string;
+  destination: string;
   fallbackUrl?: string;
-  slug?: string;
+}
+
+// QR Code styling options
+export interface QRCodeOptions {
+  fgColor?: string;
+  bgColor?: string;
+  includeMargin?: boolean;
+  level?: 'L' | 'M' | 'Q' | 'H';
+  size?: number;
 }

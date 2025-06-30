@@ -33,10 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Load runtime configuration before any other scripts */}
-        <Script
-          src="/config.js"
-          strategy="beforeInteractive"
-        />
+        <Script src="/config.js" strategy="beforeInteractive" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
