@@ -38,6 +38,10 @@ services:
       - PORT=3001
       - NODE_ENV=production
       - HOST=0.0.0.0
+      # Prisma configuration to avoid binary downloads
+      - PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
+      - PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+      - PRISMA_DISABLE_WARNINGS=true
     depends_on:
       db:
         condition: service_healthy
