@@ -19,13 +19,16 @@ attempt=1
 while [ $attempt -le $max_attempts ]; do
     echo "Attempt $attempt/$max_attempts: Testing database connection..."
     
-    if npx prisma db push --accept-data-loss --schema=./backend/prisma/schema.prisma 2>/dev/null; then
-        echo "Database is ready!"
+    # Use a simpler connectivity test that shows errors
+    if npx prisma db pull --schema=./backend/prisma/schema.prisma --force 2>&1; then
+        echo "Database is ready and accessible!"
         break
     fi
     
     if [ $attempt -eq $max_attempts ]; then
         echo "Failed to connect to database after $max_attempts attempts"
+        echo "Checking DATABASE_URL format..."
+        echo "DATABASE_URL should be: postgresql://USER:PASSWORD@db:5432/DATABASE"
         exit 1
     fi
     
