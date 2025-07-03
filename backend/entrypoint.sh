@@ -11,6 +11,29 @@ export PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
 export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 export PRISMA_DISABLE_WARNINGS=true
 
+# Wait for database to be ready with retry logic
+echo "Waiting for database to be ready..."
+max_attempts=30
+attempt=1
+
+while [ $attempt -le $max_attempts ]; do
+    echo "Attempt $attempt/$max_attempts: Testing database connection..."
+    
+    if npx prisma db push --accept-data-loss --schema=./backend/prisma/schema.prisma 2>/dev/null; then
+        echo "Database is ready!"
+        break
+    fi
+    
+    if [ $attempt -eq $max_attempts ]; then
+        echo "Failed to connect to database after $max_attempts attempts"
+        exit 1
+    fi
+    
+    echo "Database not ready, waiting 2 seconds..."
+    sleep 2
+    attempt=$((attempt + 1))
+done
+
 # Run Prisma migrations
 echo "Running database migrations..."
 # Explicitly point to the schema location
