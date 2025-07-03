@@ -19,8 +19,8 @@ attempt=1
 while [ $attempt -le $max_attempts ]; do
     echo "Attempt $attempt/$max_attempts: Testing database connection..."
     
-    # Use a simpler connectivity test that shows errors
-    if npx prisma db pull --schema=./backend/prisma/schema.prisma --force 2>&1; then
+    # Test basic database connectivity using a simple query
+    if npx prisma db execute --stdin --schema=./backend/prisma/schema.prisma <<< "SELECT 1;" 2>/dev/null; then
         echo "Database is ready and accessible!"
         break
     fi
