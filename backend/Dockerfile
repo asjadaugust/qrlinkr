@@ -22,7 +22,8 @@ COPY backend/src ./backend/src
 COPY backend/prisma ./backend/prisma
 COPY backend/tsconfig.json ./backend/tsconfig.json
 
-# Generate Prisma Client, specifying the correct schema path
+# Generate Prisma Client, specifying the correct schema path and binary targets
+ENV PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
 RUN npx prisma generate --schema=./backend/prisma/schema.prisma
 
 # Build the backend application, specifying the workspace
@@ -33,6 +34,11 @@ FROM node:20.15.1-slim
 
 # Update base image packages and install OpenSSL for Prisma runtime
 RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y openssl
+
+# Set Prisma environment variables to prevent runtime binary downloads
+ENV PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+ENV PRISMA_DISABLE_WARNINGS=true
 
 WORKDIR /app
 
@@ -47,10 +53,17 @@ COPY shared/types/package.json ./shared/types/
 # Install only production dependencies for all workspaces
 RUN npm install --workspaces --frozen-lockfile --production --ignore-scripts
 
+# Install Prisma CLI separately to ensure it's available for migrations
+RUN npm install prisma@latest --save-dev
+
 # Selectively copy only the necessary production artifacts from the builder stage
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/prisma ./backend/prisma
 COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
+
+# Copy the entire prisma installation to avoid runtime downloads
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy the entrypoint script
 COPY backend/entrypoint.sh /app/entrypoint.sh

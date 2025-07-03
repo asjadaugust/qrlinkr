@@ -6,6 +6,11 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# Set Prisma environment variables to prevent runtime binary downloads
+export PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
+export PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
+export PRISMA_DISABLE_WARNINGS=true
+
 # Run Prisma migrations
 echo "Running database migrations..."
 # Explicitly point to the schema location
