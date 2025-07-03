@@ -1,12 +1,12 @@
 services:
   # PostgreSQL Database Service
-  postgres:
+  db:
     image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-qrlinkr}
-      POSTGRES_USER: ${POSTGRES_USER:-user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_USER: ${POSTGRES_USER:-qrlinkr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qrlinkr123}
     ports:
       - '5432:5432'
     volumes:
@@ -21,10 +21,11 @@ services:
       dockerfile: backend/Dockerfile
     restart: always
     depends_on:
-      - postgres
+      - db
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-qrlinkr}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-qrlinkr}:${POSTGRES_PASSWORD:-qrlinkr123}@db:5432/${POSTGRES_DB:-qrlinkr}
       - PORT=3001
+      - NODE_ENV=development
     ports:
       - '3001:3001'
     networks:
@@ -35,14 +36,12 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      args:
-        NEXT_PUBLIC_BACKEND_HOST: http://backend:3001
     restart: always
     depends_on:
       - backend
     environment:
-      # In development, we use Next.js rewrites to proxy to the backend
-      - NEXT_PUBLIC_BACKEND_HOST=http://backend:3001
+      # Frontend API configuration - using host-mapped URL for browser access
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
     ports:
       - '3000:3000'
     networks:

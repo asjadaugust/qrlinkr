@@ -51,6 +51,15 @@ export function build(opts = {}) {
     return { hello: 'world' };
   });
 
+  // Health check endpoint for Docker/Synology health monitoring
+  server.get('/health', async (request, reply) => {
+    return { 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    };
+  });
+
   return server;
 }
 

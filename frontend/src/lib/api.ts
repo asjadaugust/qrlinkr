@@ -16,9 +16,6 @@ declare global {
   }
 }
 
-let isInitialized = false;
-let configPromise: Promise<void> | null = null;
-
 // Get API base URL from runtime environment variables
 function getApiBaseUrl(): string {
   // For server-side rendering in production, use backend service directly
@@ -33,6 +30,16 @@ function getApiBaseUrl(): string {
     return 'http://localhost:3001';
   }
 
+  // Client-side: First check build-time environment variable
+  const buildTimeUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (buildTimeUrl && buildTimeUrl !== '/api') {
+    console.log(
+      'Client-side: Using build-time NEXT_PUBLIC_API_BASE_URL:',
+      buildTimeUrl
+    );
+    return buildTimeUrl;
+  }
+
   // Client-side: check if config was loaded from /config.js
   const config = window.__QRLINKR_CONFIG__;
   if (
@@ -45,16 +52,6 @@ function getApiBaseUrl(): string {
       config.apiBaseUrl
     );
     return config.apiBaseUrl;
-  }
-
-  // Check build-time environment variable
-  const buildTimeUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (buildTimeUrl && buildTimeUrl !== '/api') {
-    console.log(
-      'Client-side: Using build-time NEXT_PUBLIC_API_BASE_URL:',
-      buildTimeUrl
-    );
-    return buildTimeUrl;
   }
 
   // Fallback to Next.js proxy only in development
@@ -73,107 +70,34 @@ export function getBaseUrl(): string {
   return getApiBaseUrl();
 }
 
-// Wait for runtime config to be available
-function waitForConfig(): Promise<void> {
-  if (typeof window === 'undefined') {
-    // Server-side: config not needed
-    return Promise.resolve();
-  }
-
-  if (window.__QRLINKR_CONFIG__) {
-    // Config already available
-    return Promise.resolve();
-  }
-
-  if (configPromise) {
-    // Already waiting for config
-    return configPromise;
-  }
-
-  configPromise = new Promise((resolve) => {
-    // Check for config periodically
-    const checkConfig = () => {
-      if (window.__QRLINKR_CONFIG__) {
-        console.log('Runtime config detected:', window.__QRLINKR_CONFIG__);
-        resolve();
-      } else {
-        setTimeout(checkConfig, 50);
-      }
-    };
-
-    // Start checking immediately
-    checkConfig();
-
-    // Also listen for DOMContentLoaded in case we're very early
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', checkConfig);
-    }
-  });
-
-  return configPromise;
-}
-
 // Create axios instance with initial base URL
 const api: ExtendedAxiosInstance = axios.create({
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json',
   },
+  baseURL: getApiBaseUrl(), // Set initial base URL
 }) as ExtendedAxiosInstance;
 
-// Function to initialize or update the API base URL
-async function initializeApi(): Promise<string> {
-  // Wait for config to be available on client-side
-  await waitForConfig();
-
+// Simple initialization function
+function initializeApi(): string {
   const baseURL = getApiBaseUrl();
-
+  api.defaults.baseURL = baseURL;
+  
   console.log('=== API Client Configuration ===');
   console.log('Final API Base URL:', baseURL);
   console.log('Is using Next.js proxy:', baseURL === '/api');
   console.log('================================');
 
-  // Update the axios instance with the correct base URL
-  api.defaults.baseURL = baseURL;
-  isInitialized = true;
-
   return baseURL;
 }
 
-// Initialize for server-side rendering (uses defaults)
-if (typeof window === 'undefined') {
-  api.defaults.baseURL = getApiBaseUrl();
-  isInitialized = true;
-}
+// Initialize immediately
+initializeApi();
 
-// Add request interceptor to ensure initialization and debugging
+// Add request interceptor for debugging
 api.interceptors.request.use(
-  async (config) => {
-    // ALWAYS re-check for runtime config on client-side before each request
-    if (typeof window !== 'undefined') {
-      const runtimeConfig = window.__QRLINKR_CONFIG__;
-      if (
-        runtimeConfig?.apiBaseUrl &&
-        runtimeConfig.apiBaseUrl !== '/api' &&
-        runtimeConfig.apiBaseUrl !== '__API_BASE_URL_PLACEHOLDER__'
-      ) {
-        // Use runtime config if available
-        config.baseURL = runtimeConfig.apiBaseUrl;
-        console.log(
-          '🔄 Interceptor: Using runtime config for request:',
-          runtimeConfig.apiBaseUrl
-        );
-      } else {
-        console.log(
-          '⚠️ Interceptor: No runtime config found, attempting initialization'
-        );
-        if (!isInitialized) {
-          console.log('Initializing API client before request...');
-          await initializeApi();
-        }
-      }
-    }
-
+  (config) => {
     console.log(`🚀 Making API request to: ${config.baseURL}${config.url}`);
     return config;
   },
@@ -217,11 +141,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Ensure API is initialized on client-side when module loads
-if (typeof window !== 'undefined') {
-  initializeApi().catch(console.error);
-}
 
 // Add the getBaseUrl method to the api object
 api.getBaseUrl = getBaseUrl;

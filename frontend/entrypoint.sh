@@ -9,17 +9,20 @@ echo "NEXT_PUBLIC_API_BASE_URL: $NEXT_PUBLIC_API_BASE_URL"
 # Generate runtime configuration
 CONFIG_FILE="/app/public/config.js"
 if [ -f "$CONFIG_FILE" ]; then
-    # If NEXT_PUBLIC_API_BASE_URL is not set or is empty, use host-mapped backend port
+    # Determine the appropriate API base URL based on environment
     if [ -z "$NEXT_PUBLIC_API_BASE_URL" ] || [ "$NEXT_PUBLIC_API_BASE_URL" = "" ]; then
-        echo "No API base URL set, using host-mapped backend port..."
-        
-        # For browser access, use localhost with the mapped port from docker-compose
-        # The backend container is mapped to host port 3001
+        echo "No API base URL set, using default..."
         API_BASE_URL="http://localhost:3001"
-        echo "Using host-mapped backend port: $API_BASE_URL"
     else
-        API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL"
-        echo "Using provided API base URL: $API_BASE_URL"
+        # Check if the API base URL is using Docker service name
+        if echo "$NEXT_PUBLIC_API_BASE_URL" | grep -q "backend:3001"; then
+            # For local Docker development, browser needs to use host-mapped port
+            API_BASE_URL="http://localhost:3001"
+            echo "Converting Docker service URL to host-mapped URL: $API_BASE_URL"
+        else
+            API_BASE_URL="$NEXT_PUBLIC_API_BASE_URL"
+            echo "Using provided API base URL: $API_BASE_URL"
+        fi
     fi
     
     echo "Injecting API base URL into config: $API_BASE_URL"
