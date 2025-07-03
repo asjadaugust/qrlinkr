@@ -39,7 +39,7 @@ npm run dev
 - **Frontend**: Next.js 15 + Material-UI + TailwindCSS
 - **Backend**: Fastify + Prisma ORM
 - **Database**: PostgreSQL
-- **Deployment**: Docker + GitHub Container Registry
+- **Deployment**: Docker + GitHub Container Registry (optional)
 
 ## 📚 Documentation
 

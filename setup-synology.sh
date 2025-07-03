@@ -25,17 +25,17 @@ else
 fi
 
 # Create .env file from template
-if [ -f ".env.synology" ]; then
+if [ -f ".env.example" ]; then
     if [ ! -f ".env" ]; then
-        cp .env.synology .env
+        cp .env.example .env
         echo "✅ Created .env file from template"
-        echo "⚠️  IMPORTANT: Update your NAS IP address in .env file!"
+        echo "⚠️  IMPORTANT: Update your GitHub username and NAS IP in .env file!"
     else
         echo "ℹ️  .env file already exists, skipping..."
-        echo "💡 You may want to compare it with .env.synology for new settings"
+        echo "💡 You may want to compare it with .env.example for new settings"
     fi
 else
-    echo "❌ Error: .env.synology template not found"
+    echo "❌ Error: .env.example template not found"
     exit 1
 fi
 
@@ -52,12 +52,13 @@ echo "2. In Synology Container Manager: Project → qrlinkr → Action → Reset
 echo "3. Or run: docker-compose pull && docker-compose up -d"
 echo ""
 echo "📋 Next steps for Synology NAS deployment:"
-echo "1. Edit .env file and replace 'your-nas-ip' with your actual NAS IP"
-echo "2. Upload this folder to your NAS (e.g., /docker/qrlinkr/)"
-echo "3. Open Container Manager on your NAS"
-echo "4. Go to Project → Create → Choose the uploaded folder"
-echo "5. Wait for image download and deployment (2-3 minutes)"
-echo "6. Access QRLinkr at http://your-nas-ip:3000"
+echo "1. Edit .env file and set GITHUB_REPOSITORY_OWNER to your GitHub username"
+echo "2. Make sure your GitHub Actions have pushed images to GHCR"
+echo "3. Upload this folder to your NAS (e.g., /docker/qrlinkr/)"
+echo "4. Open Container Manager on your NAS"
+echo "5. Go to Project → Create → Choose the uploaded folder"
+echo "6. Wait for image download and deployment (2-3 minutes)"
+echo "7. Access QRLinkr at http://your-nas-ip:3000"
 echo ""
 echo "📖 For detailed instructions, see the upcoming SYNOLOGY_SETUP.md"
 echo ""

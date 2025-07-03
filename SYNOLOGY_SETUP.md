@@ -2,11 +2,11 @@
 
 This guide shows how to deploy QRLinkr on Synology NAS using pre-built images from GitHub Container Registry (GHCR).
 
-## Why Use GHCR Images?
+## GHCR Image Benefits
 
-✅ **Fast Deployment**: No building required on your NAS  
-✅ **Consistent Images**: Same images across all environments  
-✅ **Automatic Updates**: GitHub Actions builds and pushes latest images  
+✅ **Fast Deployment**: No building on NAS (download pre-built images)  
+✅ **Consistent Environments**: Same images across dev/staging/prod  
+✅ **Automatic Updates**: GitHub Actions push new images on code changes  
 ✅ **Resource Efficient**: No compilation load on your NAS  
 
 ## Prerequisites
@@ -14,14 +14,15 @@ This guide shows how to deploy QRLinkr on Synology NAS using pre-built images fr
 - **Synology NAS** with DSM 7.0 or later
 - **Container Manager** package installed
 - **Admin access** to your NAS
+- **GitHub Actions** configured to push images to GHCR
 
 ## Quick Setup
 
 ### 1. Prepare Files
 1. Create folder: `/docker/qrlinkr/` on your NAS
 2. Copy `docker-compose.synology.yml` → rename to `docker-compose.yml`
-3. Copy `.env.synology` → rename to `.env`
-4. Update your NAS IP in `.env` file
+3. Copy `.env.example` → rename to `.env`
+4. Update `GITHUB_REPOSITORY_OWNER` in `.env` file with your GitHub username
 
 ### 2. Deploy in Container Manager
 1. Open **Container Manager**
@@ -41,18 +42,22 @@ This guide shows how to deploy QRLinkr on Synology NAS using pre-built images fr
 ```bash
 # Database Configuration
 POSTGRES_DB=qrlinkr
-POSTGRES_USER=qrlinkr
-POSTGRES_PASSWORD=your-secure-password
+POSTGRES_USER=qrlinkr_user
+POSTGRES_PASSWORD=changeme_in_production
 
 # Application URLs
-DATABASE_URL=postgresql://qrlinkr:your-secure-password@db:5432/qrlinkr
+DATABASE_URL=postgresql://qrlinkr_user:changeme_in_production@db:5432/qrlinkr
 API_BASE_URL=http://your-nas-ip:3001
+
+# GHCR Configuration
+GITHUB_REPOSITORY_OWNER=your_github_username
 ```
 
-### Docker Images Used
-- **Backend**: `ghcr.io/asjadaugust/qrlinker-backend:latest`
-- **Frontend**: `ghcr.io/asjadaugust/qrlinker-frontend:latest`
-- **Database**: `postgres:15-alpine`
+### Images Built Locally
+
+- **Backend**: Built from `./backend/Dockerfile`
+- **Frontend**: Built from `./frontend/Dockerfile`
+- **Database**: `postgres:15-alpine` (from Docker Hub)
 
 ## Troubleshooting
 
@@ -75,6 +80,10 @@ Your GitHub Actions workflow automatically:
 1. **Builds** new images on code changes
 2. **Pushes** to GHCR with `latest` tag
 3. **Tags** with version numbers
+
+To update QRLinkr on your NAS:
+1. **In Container Manager**: Go to **Project** → **qrlinkr** → **Action** → **Reset**
+2. This pulls latest images and restarts services
 
 ### Manual Update Process
 

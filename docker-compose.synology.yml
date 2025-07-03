@@ -24,19 +24,13 @@ services:
       retries: 5
       start_period: 30s
 
-  # Backend API Service (Fastify) - Using GHCR image
+  # Backend API Service (Fastify) - Pull from GHCR
   backend:
-    image: ghcr.io/asjadaugust/qrlinkr-backend:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr-backend:latest
     container_name: qrlinkr-backend-prod
     restart: unless-stopped
     networks:
       - qrlinkr-network
-      - default  # Enable external network access for Prisma binary downloads
-    # Add DNS servers for external connectivity
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 1.1.1.1
     ports:
       - '3001:3001'
     environment:
@@ -44,16 +38,6 @@ services:
       - PORT=3001
       - NODE_ENV=production
       - HOST=0.0.0.0
-      # Prisma configuration to avoid binary downloads
-      - PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
-      - PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
-      # Network and binary download configuration
-      - PRISMA_BINARIES_MIRROR=https://binaries.prisma.sh
-      - PRISMA_DISABLE_WARNINGS=true
-      # Enable debug logging for network issues
-      - DEBUG=prisma:*
-      # Increase timeouts for network operations
-      - PRISMA_CLIENT_ENGINE_TYPE=binary
     depends_on:
       db:
         condition: service_healthy
@@ -68,9 +52,9 @@ services:
       retries: 5
       start_period: 60s
 
-  # Frontend Web Application (Next.js) - Using GHCR image
+  # Frontend Web Application (Next.js) - Pull from GHCR
   frontend:
-    image: ghcr.io/asjadaugust/qrlinkr-frontend:latest
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr-frontend:latest
     container_name: qrlinkr-frontend-prod
     restart: unless-stopped
     networks:
