@@ -7,27 +7,35 @@ Your Synology was pulling from the **wrong Docker registry**!
 - ❌ **Wrong**: `ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr/backend:latest` (variable undefined)
 - ✅ **Correct**: `ghcr.io/asjadaugust/qrlinkr/backend:latest`
 
-## **Immediate Fix Instructions**
+## **Immediate Fix Instructions** 
 
-### **Step 1: Update Files on Synology**
-Copy the fixed files to your Synology:
+✅ **GitHub Actions Build #20 completed successfully!** The new images with ES module fixes are now available.
+
+### **Step 1: Aggressive Image Update (Recommended)**
+This forces a complete refresh and removes old cached images:
 
 ```bash
 # SSH into your Synology and run:
 cd /volume1/docker/qrlinkr
 
-# Download the fixed docker-compose file
-curl -o docker-compose.synology-hostnet.yml https://raw.githubusercontent.com/asjadaugust/qrlinkr/main/docker-compose.synology-hostnet.yml
+# Download the AGGRESSIVE update script
+curl -o synology-force-fresh-images.sh https://raw.githubusercontent.com/asjadaugust/qrlinkr/main/synology-force-fresh-images.sh
+chmod +x synology-force-fresh-images.sh
 
-# Download the corrected update script
-curl -o synology-fix-correct-registry.sh https://raw.githubusercontent.com/asjadaugust/qrlinkr/main/synology-fix-correct-registry.sh
-chmod +x synology-fix-correct-registry.sh
+# Run the aggressive update (removes old images and forces fresh pull)
+./synology-force-fresh-images.sh
 ```
 
-### **Step 2: Run the Fixed Update Script**
+### **Step 2: Verify the Fix** 
+Check if the Docker image actually contains the ES module fix:
+
 ```bash
-cd /volume1/docker/qrlinkr
-./synology-fix-correct-registry.sh
+# Download verification script
+curl -o verify-docker-image.sh https://raw.githubusercontent.com/asjadaugust/qrlinkr/main/verify-docker-image.sh
+chmod +x verify-docker-image.sh
+
+# Verify the image has the fix
+./verify-docker-image.sh
 ```
 
 ## **Expected Success Output**
