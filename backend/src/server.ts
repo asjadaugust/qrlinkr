@@ -62,28 +62,3 @@ export function build(opts = {}) {
 
   return server;
 }
-
-// Only run the server if this file is executed directly
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = build();
-
-  const start = async () => {
-    try {
-      await server.listen({
-        port: parseInt(process.env.PORT || '3001'),
-        host: process.env.HOST || '0.0.0.0',
-      });
-    } catch (err) {
-      server.log.error(err);
-      process.exit(1);
-    }
-  };
-
-  start();
-}

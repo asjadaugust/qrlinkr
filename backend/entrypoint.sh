@@ -134,15 +134,12 @@ done
 
 # Additional database readiness check using Prisma
 echo "Testing database connection with Prisma..."
-# Create a temporary SQL file for the test query
-echo "SELECT 1;" > /tmp/test.sql
-if npx prisma db execute --file /tmp/test.sql --schema=./prisma/schema.prisma; then
+# Use Prisma's introspect as a connection test
+if npx prisma db pull --schema=./prisma/schema.prisma --preview-feature >/dev/null 2>&1; then
     echo "✓ Prisma database connection successful!"
-    rm -f /tmp/test.sql
 else
     echo "⚠ Prisma database connection failed, but continuing..."
     echo "This might be expected if migrations haven't been run yet."
-    rm -f /tmp/test.sql
 fi
 
 # Run Prisma migrations
