@@ -6,7 +6,12 @@ Your Synology is running an **outdated Docker image** built before our ES module
 SyntaxError: Cannot use import statement outside a module
 ```
 
-This confirms the container doesn't have our `"type": "module"` fix in `package.json`.
+**CONFIRMED**: The file timestamps prove this is an old image:
+```
+-rw-r--r-- 1 backend-user backend-group 776 Jul 4 01:25 package.json
+```
+This `package.json` is from **01:25 AM**, but our ES module fix was committed **after 3:00 AM**.
+The container doesn't have our `"type": "module"` fix in `package.json`.
 
 ## 🚀 Quick Fix Instructions
 

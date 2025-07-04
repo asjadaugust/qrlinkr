@@ -29,7 +29,7 @@ services:
 
   # Backend API Service (Fastify) - Pull from GHCR
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr/backend:latest
+    image: ghcr.io/asjadaugust/qrlinkr/backend:latest
     container_name: qrlinkr-backend-prod-hostnet
     restart: unless-stopped
     network_mode: host
@@ -60,7 +60,7 @@ services:
 
   # Frontend Web Application (Next.js) - Pull from GHCR
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr/frontend:latest
+    image: ghcr.io/asjadaugust/qrlinkr/frontend:latest
     container_name: qrlinkr-frontend-prod-hostnet
     restart: unless-stopped
     network_mode: host
