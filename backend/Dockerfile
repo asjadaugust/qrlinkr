@@ -33,7 +33,9 @@ RUN npm run build --workspace=backend
 FROM node:20.15.1-slim
 
 # Update base image packages and install OpenSSL for Prisma runtime
-RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y openssl
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && \
+    apt-get install -y openssl postgresql-client netcat-traditional && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set Prisma environment variables to prevent runtime binary downloads
 ENV PRISMA_CLI_BINARY_TARGETS="debian-openssl-3.0.x"
