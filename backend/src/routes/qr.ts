@@ -6,7 +6,7 @@ import {
   idParamSchema,
   slugParamSchema,
   updateQrLinkSchema,
-} from '../schemas/qr.js';
+} from '../schemas/qr';
 import { ZodError } from 'zod';
 
 // Create Prisma client inside the function to respect environment variables

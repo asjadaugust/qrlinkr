@@ -1,4 +1,4 @@
-import { build } from './server.js';
+import { build } from './server';
 
 console.log('🔧 Building server...');
 const server = build();
