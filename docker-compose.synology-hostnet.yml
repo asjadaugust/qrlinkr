@@ -2,10 +2,9 @@ services:
   # PostgreSQL Database Service
   db:
     image: postgres:15-alpine
-    container_name: qrlinkr-db-prod
+    container_name: qrlinkr-db-prod-hostnet
     restart: unless-stopped
-    networks:
-      - qrlinkr-network
+    network_mode: host
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -13,11 +12,15 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    command: 
+      - postgres
+      - -p
+      - "5433"  # Use different port to avoid conflicts
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}',
+          'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -p 5433',
         ]
       interval: 30s
       timeout: 10s
@@ -27,14 +30,11 @@ services:
   # Backend API Service (Fastify) - Pull from GHCR
   backend:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr/backend:latest
-    container_name: qrlinkr-backend-prod
+    container_name: qrlinkr-backend-prod-hostnet
     restart: unless-stopped
-    networks:
-      - qrlinkr-network
-    ports:
-      - '3001:3001'
+    network_mode: host
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5433/${POSTGRES_DB}
       - PORT=3001
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -56,17 +56,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 180s  # Increased from 120s to give more time for DB connection
+      start_period: 180s
 
   # Frontend Web Application (Next.js) - Pull from GHCR
   frontend:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr/frontend:latest
-    container_name: qrlinkr-frontend-prod
+    container_name: qrlinkr-frontend-prod-hostnet
     restart: unless-stopped
-    networks:
-      - qrlinkr-network
-    ports:
-      - '3000:3000'
+    network_mode: host
     environment:
       - NEXT_PUBLIC_API_BASE_URL=${API_BASE_URL}
       - NODE_ENV=production
@@ -85,10 +82,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 90s
-
-networks:
-  qrlinkr-network:
-    driver: bridge
 
 volumes:
   postgres_data:

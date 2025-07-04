@@ -43,7 +43,7 @@ export PRISMA_DISABLE_WARNINGS=true
 
 # Wait for database to be ready with retry logic
 echo "Waiting for database to be ready..."
-max_attempts=30
+max_attempts=60  # Increased from 30 for slower networks
 attempt=1
 
 while [ $attempt -le $max_attempts ]; do
@@ -51,32 +51,42 @@ while [ $attempt -le $max_attempts ]; do
     
     # First, test basic port connectivity with netcat
     if command -v nc >/dev/null 2>&1; then
-        if nc -z "$DB_HOST" "$DB_PORT"; then
-            echo "Database port $DB_PORT is accessible on $DB_HOST!"
+        echo "Testing port connectivity to $DB_HOST:$DB_PORT..."
+        if nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; then
+            echo "✓ Database port $DB_PORT is accessible on $DB_HOST!"
             
             # Now test actual database connection with psql
+            echo "Testing database authentication..."
             if psql -c "SELECT 1;" >/dev/null 2>&1; then
-                echo "Database connection successful with psql!"
+                echo "✓ Database connection successful with psql!"
                 break
             else
-                echo "Port accessible but database not ready yet..."
+                echo "⚠ Port accessible but database authentication failed..."
+                # Show more detailed error for debugging
+                psql -c "SELECT 1;" 2>&1 | head -3
             fi
         else
-            echo "Cannot reach database port $DB_PORT on $DB_HOST"
+            echo "✗ Cannot reach database port $DB_PORT on $DB_HOST"
+            # Try to resolve hostname
+            if command -v nslookup >/dev/null 2>&1; then
+                echo "DNS lookup for $DB_HOST:"
+                nslookup "$DB_HOST" || echo "DNS resolution failed"
+            fi
         fi
     else
         # Fallback to direct psql test if nc is not available
-        echo "Testing database connection directly with psql..."
+        echo "Testing database connection directly with psql (nc not available)..."
         if psql -c "SELECT 1;" >/dev/null 2>&1; then
-            echo "Database connection successful!"
+            echo "✓ Database connection successful!"
             break
         else
-            echo "Database connection failed"
+            echo "✗ Database connection failed"
+            psql -c "SELECT 1;" 2>&1 | head -3
         fi
     fi
     
     if [ $attempt -eq $max_attempts ]; then
-        echo "Failed to connect to database after $max_attempts attempts"
+        echo "❌ Failed to connect to database after $max_attempts attempts"
         echo "=== DEBUGGING INFORMATION ==="
         echo "DATABASE_URL: $DATABASE_URL"
         echo "DB_HOST: $DB_HOST"
@@ -84,41 +94,61 @@ while [ $attempt -le $max_attempts ]; do
         echo "DB_USER: $DB_USER"
         echo "DB_NAME: $DB_NAME"
         echo "DB_PASSWORD: [hidden]"
-        echo "Trying to ping database container..."
+        
+        echo "=== NETWORK DIAGNOSTICS ==="
+        # Check if we can resolve the hostname
+        if command -v nslookup >/dev/null 2>&1; then
+            echo "Checking DNS resolution for $DB_HOST:"
+            nslookup "$DB_HOST" 2>&1 || echo "DNS resolution failed"
+        fi
+        
+        # Check Docker network connectivity
+        echo "Checking network interfaces:"
+        ip addr show 2>/dev/null || ifconfig 2>/dev/null || echo "Cannot list network interfaces"
+        
+        echo "Checking routes:"
+        ip route show 2>/dev/null || route 2>/dev/null || echo "Cannot list routes"
+        
+        # Try ping if available
         if command -v ping >/dev/null 2>&1; then
-            ping -c 3 "$DB_HOST" || echo "Ping to $DB_HOST failed"
+            echo "Attempting to ping $DB_HOST:"
+            ping -c 3 "$DB_HOST" 2>&1 || echo "Ping to $DB_HOST failed"
         fi
-        echo "Checking if port $DB_PORT is listening on $DB_HOST..."
+        
+        # Final port check with verbose output
         if command -v nc >/dev/null 2>&1; then
-            nc -v -z "$DB_HOST" "$DB_PORT" || echo "Port check failed"
+            echo "Final port check with verbose output:"
+            nc -v -z "$DB_HOST" "$DB_PORT" 2>&1 || echo "Port check failed"
         fi
-        echo "Attempting direct psql connection with verbose output..."
-        psql -c "SELECT 1;" || echo "Direct psql connection failed"
+        
+        echo "Final psql connection attempt with verbose output:"
+        PGCONNECT_TIMEOUT=5 psql -c "SELECT 1;" 2>&1 || echo "Direct psql connection failed"
         exit 1
     fi
     
-    echo "Database not ready, waiting 2 seconds..."
-    sleep 2
+    echo "Database not ready, waiting 3 seconds..."
+    sleep 3  # Increased from 2 seconds
+    sleep 3  # Increased from 2 seconds
     attempt=$((attempt + 1))
 done
 
 # Additional database readiness check using Prisma
 echo "Testing database connection with Prisma..."
-if npx prisma db execute --sql "SELECT 1" --schema=./backend/prisma/schema.prisma; then
-    echo "Prisma database connection successful!"
+if npx prisma db execute --sql "SELECT 1" --schema=./prisma/schema.prisma; then
+    echo "✓ Prisma database connection successful!"
 else
-    echo "Prisma database connection failed, but continuing..."
+    echo "⚠ Prisma database connection failed, but continuing..."
     echo "This might be expected if migrations haven't been run yet."
 fi
 
 # Run Prisma migrations
 echo "Running database migrations..."
-npx prisma migrate deploy --schema=./backend/prisma/schema.prisma || {
+npx prisma migrate deploy --schema=./prisma/schema.prisma || {
     echo "Migration failed, trying to push schema instead..."
-    npx prisma db push --schema=./backend/prisma/schema.prisma
+    npx prisma db push --schema=./prisma/schema.prisma
 }
-echo "Database setup completed successfully."
+echo "✓ Database setup completed successfully."
 
 # Start the main application
-echo "Starting the server..."
-exec node backend/dist/index.js
+echo "🚀 Starting the server..."
+exec node dist/index.js

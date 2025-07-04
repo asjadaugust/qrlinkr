@@ -59,8 +59,8 @@ RUN npm install --workspaces --frozen-lockfile --production --ignore-scripts
 RUN npm install prisma@latest --save-dev
 
 # Selectively copy only the necessary production artifacts from the builder stage
-COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/prisma ./backend/prisma
+COPY --from=builder /app/backend/dist ./dist
+COPY --from=builder /app/backend/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma/client ./node_modules/.prisma/client
 
 # Copy the entire prisma installation to avoid runtime downloads
@@ -83,6 +83,5 @@ EXPOSE 3001
 # Set the entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
 
-# The command to start the application
-# This will be passed to the entrypoint script
-CMD ["node", "backend/dist/index.js"]
+# The command to start the application is handled by the entrypoint script
+CMD []
