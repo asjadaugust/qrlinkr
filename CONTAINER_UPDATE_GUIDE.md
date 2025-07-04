@@ -1,42 +1,35 @@
-# 🔧 QRLinkr Container Update Troubleshooting
+# 🔧 QRLinkr Container Update - **REGISTRY ISSUE RESOLVED**
 
-## Current Issue: Old Container Image
-Your Synology is running an **outdated Docker image** built before our ES module fixes. The logs show:
+## ✅ **ROOT CAUSE IDENTIFIED & FIXED**
+
+Your Synology was pulling from the **WRONG Docker registry**! The issue was:
+
 ```
-SyntaxError: Cannot use import statement outside a module
+❌ Wrong: ghcr.io/${GITHUB_REPOSITORY_OWNER}/qrlinkr/backend:latest (undefined variable)
+✅ Fixed: ghcr.io/asjadaugust/qrlinkr/backend:latest
 ```
 
-**CONFIRMED**: The file timestamps prove this is an old image:
-```
--rw-r--r-- 1 backend-user backend-group 776 Jul 4 01:25 package.json
-```
-This `package.json` is from **01:25 AM**, but our ES module fix was committed **after 3:00 AM**.
-The container doesn't have our `"type": "module"` fix in `package.json`.
+**CONFIRMED**: The `$GITHUB_REPOSITORY_OWNER` variable was undefined in your environment, so Docker was trying to pull from an invalid registry path. This is why you kept getting the old image with the ES module error.
 
-## 🚀 Quick Fix Instructions
+## 🚀 **IMMEDIATE FIX - Run This Now**
 
-### Step 1: Check GitHub Actions Build
-1. Go to your GitHub repository → **Actions** tab
-2. Look for the latest workflow run after commit `16c4755`
-3. **Wait for it to complete successfully** ✅
-
-### Step 2: Update Synology with New Images
-Run this on your Synology NAS:
+### Step 1: Download Fixed Files
+SSH into your Synology and run:
 
 ```bash
-# Navigate to project directory
 cd /volume1/docker/qrlinkr
 
-# Stop containers and pull new images
-docker-compose -f docker-compose.synology-hostnet.yml down
-docker pull ghcr.io/$GITHUB_REPOSITORY_OWNER/qrlinkr/backend:latest
-docker pull ghcr.io/$GITHUB_REPOSITORY_OWNER/qrlinkr/frontend:latest
+# Get the corrected docker-compose file with hardcoded registry paths
+curl -o docker-compose.synology-hostnet.yml https://raw.githubusercontent.com/asjadaugust/qrlinkr/main/docker-compose.synology-hostnet.yml
 
-# Start with new images
-docker-compose -f docker-compose.synology-hostnet.yml --env-file .env.synology-hostnet up -d
+# Get the corrected update script
+curl -o synology-fix-correct-registry.sh https://raw.githubusercontent.com/asjadaugust/qrlinkr/main/synology-fix-correct-registry.sh
+chmod +x synology-fix-correct-registry.sh
+```
 
-# Monitor logs
-docker-compose -f docker-compose.synology-hostnet.yml logs -f backend
+### Step 2: Run the Fixed Update
+```bash
+./synology-fix-correct-registry.sh
 ```
 
 ### Step 3: Expected Success Output
