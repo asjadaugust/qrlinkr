@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    outputFileTracingIncludes: {
-      '/*': ['./shared/**/*'],
-    },
+  outputFileTracingIncludes: {
+    '/*': ['./shared/**/*'],
   },
   output: 'standalone',
   // API proxy for development

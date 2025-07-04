@@ -19,16 +19,16 @@ attempt=1
 while [ $attempt -le $max_attempts ]; do
     echo "Attempt $attempt/$max_attempts: Testing database connection..."
     
-    # Test basic database connectivity using a simple query
-    if npx prisma db execute --stdin --schema=./backend/prisma/schema.prisma <<< "SELECT 1;" 2>/dev/null; then
-        echo "Database is ready and accessible!"
+    # Test basic database connectivity by checking if port is accessible
+    if timeout 5 sh -c "cat < /dev/null > /dev/tcp/db/5432" 2>/dev/null; then
+        echo "Database port is accessible!"
         break
     fi
     
     if [ $attempt -eq $max_attempts ]; then
         echo "Failed to connect to database after $max_attempts attempts"
         echo "Checking DATABASE_URL format..."
-        echo "DATABASE_URL should be: postgresql://USER:PASSWORD@db:5432/DATABASE"
+        echo "DATABASE_URL: $DATABASE_URL"
         exit 1
     fi
     

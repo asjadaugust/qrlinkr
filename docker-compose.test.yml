@@ -1,0 +1,25 @@
+# Local Development Docker Compose
+# This runs only the database in Docker, allowing you to run backend/frontend natively
+
+services:
+  # PostgreSQL Database Service (Only the database for local dev)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-qrlinkr}
+      POSTGRES_USER: ${POSTGRES_USER:-qrlinkr_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_in_production}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    networks:
+      - qrlinkr-net
+
+volumes:
+  postgres_data_dev:
+
+networks:
+  qrlinkr-net:
+    driver: bridge
